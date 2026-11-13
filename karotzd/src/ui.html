@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karotz</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1f;--mute:#6b6b70;--line:#e3e1dc;--accent:#ff7a1a;--accent-ink:#fff;--ok:#1f9d55;--bad:#d64545;--chip:#efede8;--shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04)}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--card:#1e1e21;--ink:#ececee;--mute:#9a9aa1;--line:#2e2e33;--accent:#ff8c3a;--accent-ink:#141416;--chip:#28282c;--shadow:none}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px 8px;max-width:1100px;margin:0 auto}
+.brand{font-weight:700;font-size:18px;display:flex;align-items:center;gap:8px;margin-right:auto}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--mute);display:inline-block}
+.dot.on{background:var(--ok)}
+.pill{background:var(--chip);border-radius:999px;padding:3px 10px;font-size:13px;color:var(--mute);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.sw{width:12px;height:12px;border-radius:3px;border:1px solid var(--line);display:inline-block}
+nav{display:flex;gap:4px;overflow-x:auto;padding:0 12px 8px;max-width:1100px;margin:0 auto;scrollbar-width:none}
+nav button{border:0;background:none;color:var(--mute);padding:7px 12px;border-radius:8px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:16px}
+section{display:none}section.on{display:block}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card h2{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px}
+.card h2 small{margin-left:auto;font-weight:400;color:var(--mute);font-size:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+label{color:var(--mute);font-size:13px}
+button.b{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:9px;padding:7px 12px;font:inherit;cursor:pointer}
+button.b:hover{border-color:var(--mute)}
+button.p{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.d{color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+input[type=text],input[type=url],input[type=number],select,textarea{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font:inherit;min-width:0}
+textarea{width:100%;min-height:80px;resize:vertical}
+input[type=range]{flex:1;accent-color:var(--accent)}
+input[type=color]{width:52px;height:38px;border:1px solid var(--line);border-radius:9px;background:none;padding:2px}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatches button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:5px 11px;font:inherit;font-size:13px;cursor:pointer}
+.chips button:active{background:var(--accent);color:var(--accent-ink)}
+.list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto}
+.item{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;flex-wrap:wrap}
+.item .grow{flex:1;min-width:140px}
+.item .sub{color:var(--mute);font-size:12px;word-break:break-all}
+.ev{font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line);display:flex;gap:8px}
+.ev b{min-width:62px}
+.tag{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--mute)}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;overflow:auto;max-height:420px;font-size:12px;margin:8px 0 0;white-space:pre}
+.photo{width:100%;border-radius:10px;background:var(--chip);aspect-ratio:4/3;object-fit:cover;display:block}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.thumbs img{width:100%;border-radius:8px;cursor:pointer;aspect-ratio:4/3;object-fit:cover;background:var(--chip)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}.kv span:nth-child(odd){color:var(--mute)}
+.muted{color:var(--mute);font-size:13px}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;z-index:9}
+#toast.show{opacity:1}#toast.bad{background:var(--bad);color:#fff}
+@media (max-width:520px){.grid{grid-template-columns:1fr}.top{padding:10px 12px 6px}main{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="brand">🐰 Karotz <span class="dot" id="live" title="Live events"></span></div>
+    <span class="pill" id="pSleep">…</span>
+    <span class="pill"><span class="sw" id="pLed"></span><span id="pLedTxt">LED</span></span>
+    <span class="pill" id="pFree">…</span>
+    <span class="pill" id="pUp">…</span>
+    <button class="b" id="sleepBtn">Sleep</button>
+  </div>
+  <nav id="tabs">
+    <button data-t="control" class="on">Control</button><button data-t="sounds">Sounds</button><button data-t="speak">Speak</button>
+    <button data-t="camera">Camera</button><button data-t="tags">Tags</button><button data-t="events">Events</button><button data-t="system">System</button>
+  </nav>
+</header>
+<main>
+<section id="control" class="on"><div class="grid">
+  <div class="card"><h2>LED <small id="ledMs"></small></h2>
+    <div class="row"><input type="color" id="ledColor" value="#00ff00"><div class="swatches" id="swatches"></div></div>
+    <div class="row"><label><input type="checkbox" id="ledPulse"> Pulse</label>
+      <label>with <input type="color" id="ledColor2" value="#000000" style="width:40px;height:30px"></label></div>
+    <div class="row"><label style="min-width:52px">Speed</label><input type="range" id="ledSpeed" min="100" max="3000" step="50" value="700"><span id="ledSpeedTxt" class="muted">700 ms</span></div>
+    <div class="row"><label><input type="checkbox" id="ledRemember" checked> Remember as the rabbit's color</label></div>
+  </div>
+  <div class="card"><h2>Ears <small id="earsMs"></small></h2>
+    <div class="row"><label style="min-width:42px">Left</label><input type="range" id="earL" min="0" max="16" value="0"><span id="earLTxt" class="muted">0</span></div>
+    <div class="row"><label style="min-width:42px">Right</label><input type="range" id="earR" min="0" max="16" value="0"><span id="earRTxt" class="muted">0</span></div>
+    <div class="row"><label><input type="checkbox" id="earHome"> Home first (slower, more accurate)</label></div>
+    <div class="row"><button class="b p" id="earsGo">Move</button><button class="b" data-api="/cgi-bin/ears_random?noreset=1">Random</button><button class="b" data-api="/cgi-bin/ears_reset">Reset</button><button class="b" id="earsToggle">Disable ears</button></div>
+  </div>
+  <div class="card"><h2>Quick actions</h2>
+    <div class="chips">
+      <button data-api="/cgi-bin/apps/moods">Random mood</button>
+      <button data-api="/cgi-bin/apps/clock">Say the hour</button>
+      <button data-api="/cgi-bin/sound?id=bip1">Beep</button>
+      <button id="qPhoto">Take a photo</button>
+      <button data-api="/api/stop">Stop sound</button>
+    </div>
+    <p class="muted" id="lastTag">Show the rabbit a tag or press its button: it appears here and under Events.</p>
+  </div>
+</div></section>
+
+<section id="sounds"><div class="grid">
+  <div class="card" style="grid-column:1/-1"><h2>Sounds <small id="soundCount"></small></h2><div class="chips" id="soundGrid"></div></div>
+  <div class="card"><h2>Stream or radio</h2>
+    <div class="row"><input type="url" id="streamUrl" placeholder="http://… .mp3 or radio stream" style="flex:1"><button class="b p" id="streamGo">Play</button></div>
+    <div class="row" id="radioList"></div>
+    <div class="row"><button class="b" data-api="/cgi-bin/sound_control?cmd=pause">Pause</button><button class="b" data-api="/cgi-bin/sound_control?cmd=volume -10">Vol −</button><button class="b" data-api="/cgi-bin/sound_control?cmd=volume 10">Vol +</button><button class="b" data-api="/cgi-bin/sound_control?cmd=mute">Mute</button><button class="b" data-api="/api/stop">Stop</button></div>
+    <p class="muted">Streams need the rabbit to have internet access.</p>
+  </div>
+  <div class="card"><h2>Moods &amp; clock</h2>
+    <div class="row"><label>Mood #</label><input type="number" id="moodId" min="0" max="304" placeholder="random" style="width:110px"><button class="b p" id="moodGo">Play mood</button></div>
+    <div class="row"><label>Hour</label><select id="clockHour"></select><button class="b" id="clockGo">Say the time</button></div>
+    <div class="row" id="storyRow"></div>
+  </div>
+</div></section>
+
+<section id="speak"><div class="grid">
+  <div class="card"><h2>Text to speech</h2>
+    <textarea id="ttsText" placeholder="Hello! I'm your rabbit."></textarea>
+    <div class="row"><label>Voice</label><select id="ttsVoice"></select><button class="b p" id="ttsGo">Speak</button></div>
+    <p class="muted">Uses the VoiceRSS service, so the rabbit needs internet access. Spoken phrases are cached in RAM.</p>
+  </div>
+  <div class="card"><h2>Saved phrases <small><button class="b d" id="cacheClear">Clear</button></small></h2><div class="list" id="cacheList"></div></div>
+</div></section>
+
+<section id="camera"><div class="grid">
+  <div class="card"><h2>Camera <small id="camMs"></small></h2>
+    <img class="photo" id="camImg" alt="">
+    <div class="row"><button class="b p" id="camShot">Take photo</button><button class="b" id="camLive">Live view</button><button class="b" id="camSave">Save to rabbit</button><label><input type="checkbox" id="camQuiet" checked> Silent</label></div>
+    <p class="muted">“Take photo” keeps the picture in RAM only. “Save to rabbit” stores it in Snapshots (flash). Live view is about 1 frame per second.</p>
+  </div>
+  <div class="card"><h2>Saved snapshots <small><button class="b d" id="snapClear">Delete all</button></small></h2><div class="thumbs" id="snapGrid"></div></div>
+</div></section>
+
+<section id="tags"><div class="grid">
+  <div class="card" style="grid-column:1/-1"><h2>RFID tags <small><button class="b" id="recBtn">Record new tags</button></small></h2>
+    <div class="list" id="tagList"></div>
+    <p class="muted">To add tags: press “Record new tags”, show each tag to the rabbit's nose, then press “Stop recording”. A long press on the rabbit's button does the same.</p>
+  </div>
+</div></section>
+
+<section id="events"><div class="card"><h2>Live events <small><span class="chips" id="evFilter"></span></small></h2><div id="evList" class="list" style="max-height:65vh"></div></div></section>
+
+<section id="system"><div class="grid">
+  <div class="card"><h2>Rabbit</h2><div class="kv" id="sysInfo"></div></div>
+  <div class="card"><h2>Actions</h2>
+    <div class="chips">
+      <button data-api="/cgi-bin/setclock">Sync clock (NTP)</button>
+      <button id="healthBtn">Network watchdog: …</button>
+      <button id="rebootBtn" style="color:var(--bad)">Reboot</button>
+      <button onclick="location.href='/index.html'">Old web UI</button>
+    </div>
+  </div>
+  <div class="card" style="grid-column:1/-1"><h2>Diagnostics</h2>
+    <div class="chips"><button data-pre="/cgi-bin/tools_log">System log</button><button data-pre="/cgi-bin/tools_ps">Processes</button><button data-pre="/cgi-bin/tools_net">Network</button><button data-pre="/cgi-bin/cmdlist">Player commands</button><button data-api="/cgi-bin/tools_clearlog">Clear log</button></div>
+    <pre id="sysPre">Pick a view above.</pre>
+  </div>
+</div></section>
+</main>
+<div id="toast"></div>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let toastT;
+function toast(msg, bad) { const t = $('#toast'); t.textContent = msg; t.className = 'show' + (bad ? ' bad' : ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = '', 2600); }
+
+// GET a JSON route; shows the rabbit's error message if it says return=1.
+async function api(path, params, quiet) {
+  const q = params ? '?' + new URLSearchParams(params) : '';
+  const t0 = performance.now();
+  try {
+    const r = await fetch(path + q, {cache: 'no-store'});
+    const txt = (await r.text()).trim();
+    let j; try { j = JSON.parse(txt); } catch { j = {raw: txt}; }
+    j._ms = Math.round(performance.now() - t0);
+    if (j.return === '1' || j.return === false || r.status >= 400) { if (!quiet) toast(j.msg || ('Error ' + r.status), true); j._err = true; }
+    return j;
+  } catch (e) { if (!quiet) toast('Rabbit unreachable', true); return {_err: true}; }
+}
+
+// Tabs
+$$('#tabs button').forEach(b => b.onclick = () => {
+  $$('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $$('main section').forEach(s => s.classList.toggle('on', s.id === b.dataset.t));
+  ({sounds: loadSounds, speak: loadCache, camera: loadSnaps, tags: loadTags, system: loadSystem})[b.dataset.t]?.();
+});
+document.addEventListener('click', async e => {
+  const a = e.target.closest('[data-api]');
+  if (a) { const j = await api(a.dataset.api); if (!j._err) toast('Done · ' + j._ms + ' ms'); }
+  const p = e.target.closest('[data-pre]');
+  if (p) { $('#sysPre').textContent = 'Loading…'; const r = await fetch(p.dataset.pre); $('#sysPre').textContent = await r.text(); }
+});
+
+// Status bar
+let status = {};
+async function loadStatus() {
+  const [s, i] = await Promise.all([api('/cgi-bin/status', null, true), api('/api/info', null, true)]);
+  if (!s._err) {
+    status = s;
+    $('#pSleep').textContent = s.sleep === '1' ? '😴 Asleep' : '☀️ Awake';
+    $('#sleepBtn').textContent = s.sleep === '1' ? 'Wake up' : 'Sleep';
+    $('#pLed').style.background = '#' + s.led_color;
+    $('#pLedTxt').textContent = '#' + s.led_color + (s.led_pulse === '1' ? ' · pulse' : '');
+    $('#pFree').textContent = (s.karotz_free_space || '?') + ' free';
+    $('#earsToggle').textContent = s.ears_disabled === '1' ? 'Enable ears' : 'Disable ears';
+    if (!status._synced) { $('#ledColor').value = '#' + s.led_color.toLowerCase(); $('#ledPulse').checked = s.led_pulse === '1'; }
+    status._synced = true;
+    $('#healthBtn').dataset.on = '0';
+  }
+  if (!i._err && i.uptime_s) { const u = +i.uptime_s; $('#pUp').textContent = 'up ' + (u > 86400 ? Math.floor(u / 86400) + 'd ' : '') + Math.floor(u % 86400 / 3600) + 'h ' + Math.floor(u % 3600 / 60) + 'm'; }
+}
+$('#sleepBtn').onclick = async () => { const j = await api(status.sleep === '1' ? '/cgi-bin/wakeup' : '/cgi-bin/sleep'); if (!j._err) { toast('OK'); setTimeout(loadStatus, 800); } };
+
+// LED
+const presets = ['FF0000','FFA500','FFFF00','00FF00','00FFFF','0000FF','660099','FFC0CB','FFFFFF','000000'];
+$('#swatches').innerHTML = presets.map(c => `<button style="background:#${c}" data-c="${c}" title="#${c}"></button>`).join('');
+$('#swatches').onclick = e => { const c = e.target.dataset.c; if (c) { $('#ledColor').value = '#' + c; sendLed(); } };
+let ledT;
+function sendLed() {
+  clearTimeout(ledT);
+  ledT = setTimeout(async () => {
+    const p = {color: $('#ledColor').value.slice(1).toUpperCase(), speed: $('#ledSpeed').value, nomemory: $('#ledRemember').checked ? 0 : 1};
+    if ($('#ledPulse').checked) { p.pulse = 1; p.color2 = $('#ledColor2').value.slice(1).toUpperCase(); }
+    const j = await api('/cgi-bin/leds', p);
+    if (!j._err) { $('#ledMs').textContent = j._ms + ' ms'; $('#pLed').style.background = '#' + p.color; $('#pLedTxt').textContent = '#' + p.color; }
+  }, 120);
+}
+['#ledColor', '#ledColor2', '#ledPulse', '#ledSpeed'].forEach(s => $(s).addEventListener('input', sendLed));
+$('#ledSpeed').addEventListener('input', () => $('#ledSpeedTxt').textContent = $('#ledSpeed').value + ' ms');
+
+// Ears
+['L', 'R'].forEach(s => $('#ear' + s).addEventListener('input', () => $('#ear' + s + 'Txt').textContent = $('#ear' + s).value));
+$('#earsGo').onclick = async () => { const j = await api('/cgi-bin/ears', {left: $('#earL').value, right: $('#earR').value, noreset: $('#earHome').checked ? 0 : 1}); if (!j._err) $('#earsMs').textContent = j._ms + ' ms'; };
+$('#earsToggle').onclick = async () => { const j = await api('/cgi-bin/ears_mode', {disable: status.ears_disabled === '1' ? 0 : 1}); if (!j._err) loadStatus(); };
+
+// Sounds
+let soundsLoaded = false;
+async function loadSounds() {
+  if (soundsLoaded) return; soundsLoaded = true;
+  const j = await api('/cgi-bin/sound_list', null, true);
+  const ids = (j.sounds || []).map(s => s.id);
+  $('#soundCount').textContent = ids.length + ' sounds';
+  $('#soundGrid').innerHTML = ids.map(id => `<button data-api="/cgi-bin/sound?id=${encodeURIComponent(id)}">${esc(id)}</button>`).join('') || '<span class="muted">No sounds found.</span>';
+  const rl = await api('/cgi-bin/radios_list', null, true);
+  const radios = Object.values(rl).find(Array.isArray) || [];
+  $('#radioList').innerHTML = radios.slice(0, 30).map(r => `<button class="b" data-url="${esc(r.url || r.stream || '')}">${esc(r.name || r.id || r.url)}</button>`).join('');
+  const st = await api('/cgi-bin/stories_list', null, true);
+  const stories = (st.streams || []);
+  $('#storyRow').innerHTML = stories.length ? stories.map(s => `<button class="b" data-api="/cgi-bin/stories?id=${encodeURIComponent(s.id)}">${esc(s.name || s.id)}</button>`).join('') : '';
+}
+$('#radioList').onclick = e => { const u = e.target.dataset.url; if (u) { $('#streamUrl').value = u; $('#streamGo').click(); } };
+$('#streamGo').onclick = async () => { const u = $('#streamUrl').value.trim(); if (u) { const j = await api('/cgi-bin/sound', {url: u}); if (!j._err) toast('Playing'); } };
+$('#moodGo').onclick = () => api('/cgi-bin/apps/moods', $('#moodId').value ? {id: $('#moodId').value} : null).then(j => !j._err && toast('Mood ' + j.moods));
+$('#clockHour').innerHTML = '<option value="">now</option>' + [...Array(24).keys()].map(h => `<option>${h}</option>`).join('');
+$('#clockGo').onclick = () => api('/cgi-bin/apps/clock', $('#clockHour').value ? {hour: $('#clockHour').value} : null).then(j => !j._err && toast('Hour ' + j.hour));
+
+// Speak
+const extraVoices = ['heather', 'ryan', 'lucy', 'graham', 'julia', 'andreas', 'chiara', 'vittorio', 'zoe', 'daan', 'alice'];
+api('/cgi-bin/voice_list', null, true).then(j => {
+  const v = [...new Set([...(j.voices || []).map(x => x.id), ...extraVoices])];
+  $('#ttsVoice').innerHTML = v.map(x => `<option>${x}</option>`).join('');
+});
+$('#ttsGo').onclick = async () => {
+  const text = $('#ttsText').value.trim(); if (!text) return;
+  $('#ttsGo').disabled = true;
+  const j = await api('/cgi-bin/tts', {voice: $('#ttsVoice').value, text});
+  $('#ttsGo').disabled = false;
+  if (!j._err) toast(j.msg ? j.msg : j.played ? (j.cache ? 'Spoken (cached)' : 'Spoken') : 'Fetched but not played (asleep?)');
+};
+async function loadCache() {
+  const j = await api('/cgi-bin/display_cache', null, true);
+  $('#cacheList').innerHTML = (j.cache || []).map(c => `<div class="item"><div class="grow">${esc(c.text)}<div class="sub">${esc(c.voice)}</div></div><button class="b d" data-del="${esc(c.id)}">✕</button></div>`).join('') || '<span class="muted">Nothing cached.</span>';
+}
+$('#cacheList').onclick = async e => { const id = e.target.dataset.del; if (id && !(await api('/cgi-bin/clear_cache', {id}))._err) loadCache(); };
+$('#cacheClear').onclick = async () => { if (confirm('Clear all saved phrases?') && !(await api('/cgi-bin/clear_cache'))._err) loadCache(); };
+
+// Camera
+async function takePhoto() {
+  const img = $('#camImg'); stopLive();
+  $('#camShot').disabled = true; const t0 = performance.now();
+  const u = '/cgi-bin/snapshot_view?' + ($('#camQuiet').checked ? 'silent=1&' : '') + 't=' + Date.now();
+  img.onload = () => { $('#camMs').textContent = Math.round(performance.now() - t0) + ' ms'; $('#camShot').disabled = false; };
+  img.onerror = () => { toast('Camera did not answer', true); $('#camShot').disabled = false; };
+  img.src = u;
+}
+let live = false;
+function stopLive() { if (live) { live = false; $('#camImg').src = ''; $('#camLive').textContent = 'Live view'; } }
+$('#camShot').onclick = takePhoto;
+$('#qPhoto').onclick = () => { $('[data-t=camera]').click(); takePhoto(); };
+$('#camLive').onclick = () => { if (live) return stopLive(); live = true; $('#camLive').textContent = 'Stop live'; $('#camImg').src = '/cgi-bin/webcam?t=' + Date.now(); };
+$('#camSave').onclick = async () => { const j = await api('/cgi-bin/snapshot', $('#camQuiet').checked ? {silent: 1} : null); if (!j._err) { toast('Saved ' + j.filename); loadSnaps(); } };
+async function loadSnaps() {
+  const j = await api('/cgi-bin/snapshot_list', null, true);
+  const s = (j.snapshots || []).map(x => x.id).reverse();
+  $('#snapGrid').innerHTML = s.map(f => `<img loading="lazy" src="/cgi-bin/snapshot_get?filename=${encodeURIComponent(f.replace('.jpg', '.thumb.gif'))}" data-f="${esc(f)}" title="${esc(f)}">`).join('') || '<span class="muted">No saved snapshots.</span>';
+}
+$('#snapGrid').onclick = e => { const f = e.target.dataset.f; if (f) { stopLive(); $('#camImg').src = '/cgi-bin/snapshot_get?filename=' + encodeURIComponent(f); } };
+$('#snapClear').onclick = async () => { if (confirm('Delete every saved snapshot on the rabbit?') && !(await api('/cgi-bin/clear_snapshots'))._err) loadSnaps(); };
+
+// Tags
+let recording = false;
+async function loadTags() {
+  const j = await api('/cgi-bin/rfid_list_ext', null, true);
+  const tags = j.tags || [];
+  $('#tagList').innerHTML = tags.map(t => `<div class="item" data-tag="${esc(t.id)}">
+    <div class="grow"><b>${esc(t.name || t.id)}</b> <span class="tag">${esc(t.type_name)}</span> <span class="tag">${esc(t.color_name)}</span> <span class="tag">${t.has_action ? esc(t.cmd_name) : 'no action'}</span><div class="sub">${esc(t.id)}</div></div>
+    <button class="b" data-act="rename">Rename</button><button class="b" data-act="assign">Set URL</button><button class="b" data-act="unassign">Clear action</button><button class="b d" data-act="delete">Delete</button></div>`).join('')
+    || '<span class="muted">No tags yet. Use “Record new tags”.</span>';
+}
+$('#tagList').onclick = async e => {
+  const act = e.target.dataset.act, tag = e.target.closest('[data-tag]')?.dataset.tag; if (!act) return;
+  let j;
+  if (act === 'rename') { const n = prompt('Name for this tag'); if (n === null) return; j = await api('/cgi-bin/rfid_rename', {tag, name: n}); }
+  if (act === 'assign') {
+    const u = prompt('URL to call when this tag is shown (http://…)'); if (!u) return;
+    const t = await api('/cgi-bin/rfid_test_url', {url: u}, true);
+    if (t._err && !confirm('Testing that URL failed (' + (t.msg || 'error') + '). Save it anyway?')) return;
+    j = await api('/cgi-bin/rfid_assign_url', {tag, url: u});
+  }
+  if (act === 'unassign') j = await api('/cgi-bin/rfid_unassign', {tag});
+  if (act === 'delete') { if (!confirm('Delete tag ' + tag + '?')) return; j = await api('/cgi-bin/rfid_delete', {tag}); }
+  if (j && !j._err) { toast('Saved'); loadTags(); }
+};
+$('#recBtn').onclick = async () => {
+  const j = await api(recording ? '/cgi-bin/rfid_stop_record' : '/cgi-bin/rfid_start_record');
+  if (!j._err) { recording = !recording; $('#recBtn').textContent = recording ? 'Stop recording' : 'Record new tags'; if (!recording) setTimeout(loadTags, 1500); }
+};
+
+// Events (live, from karotzd's D-Bus listener)
+const evFilters = new Set(['button', 'rfid', 'test', 'webcam', 'ears']);
+const evSources = ['button', 'rfid', 'led', 'webcam', 'ears', 'test', 'other'];
+$('#evFilter').innerHTML = evSources.map(s => `<button data-src="${s}" style="${evFilters.has(s) ? '' : 'opacity:.45'}">${s}</button>`).join('');
+$('#evFilter').onclick = e => { const s = e.target.dataset.src; if (!s) return; evFilters.has(s) ? evFilters.delete(s) : evFilters.add(s); e.target.style.opacity = evFilters.has(s) ? 1 : .45; renderEvents(); };
+const events = [];
+function describe(ev) {
+  if (ev.source === 'rfid' && ev.event === 'tag_in') return 'Tag shown: ' + ev.tag;
+  if (ev.source === 'rfid' && ev.event === 'tag_out') return 'Tag removed: ' + ev.tag;
+  if (ev.source === 'button') return ({click: 'Button: click', dclick: 'Button: double-click', tclick: 'Button: triple-click', lclick_start: 'Button: long press'})[ev.event] || 'Button: ' + ev.event;
+  return ev.event + ' ' + JSON.stringify(ev.args);
+}
+function renderEvents() {
+  $('#evList').innerHTML = events.filter(e => evFilters.has(e.source)).map(e => `<div class="ev"><b>${e._t}</b><span class="tag">${esc(e.source)}</span><span>${esc(describe(e))}</span></div>`).join('') || '<div class="muted" style="padding:8px">Waiting for events…</div>';
+}
+function connectEvents() {
+  const es = new EventSource('/api/events/stream');
+  es.onopen = () => $('#live').classList.add('on');
+  es.onerror = () => { $('#live').classList.remove('on'); };
+  es.onmessage = m => {
+    const ev = JSON.parse(m.data); ev._t = new Date().toLocaleTimeString();
+    events.unshift(ev); events.length = Math.min(events.length, 200); renderEvents();
+    if (ev.source === 'rfid' || ev.source === 'button') { $('#lastTag').textContent = ev._t + ' · ' + describe(ev); if (ev.source === 'rfid' && $('#tags').classList.contains('on')) setTimeout(loadTags, 1500); }
+  };
+}
+renderEvents();
+
+// System
+async function loadSystem() {
+  const [v, i] = await Promise.all([api('/cgi-bin/get_version', null, true), api('/api/info', null, true)]);
+  const s = status, rows = [
+    ['OpenKarotz', v.version], ['Root filesystem', v.rootfs_version], ['Patch', v.patch_version], ['Kernel', i.kernel],
+    ['Load', i.loadavg], ['Memory free', i.mem_free_kb ? Math.round(i.mem_free_kb / 1024) + ' MB of ' + Math.round(i.mem_total_kb / 1024) + ' MB' : ''],
+    ['Flash free', s.karotz_free_space + ' (' + s.karotz_percent_used_space + '% used)'], ['Wi-Fi MAC', s.wlan_mac],
+    ['Sounds / moods / tags', [s.nb_sounds, s.nb_moods, s.nb_tags].join(' / ')], ['Server', 'karotzd (Rust)']];
+  $('#sysInfo').innerHTML = rows.map(([k, x]) => `<span>${k}</span><span>${esc(x ?? '')}</span>`).join('');
+}
+$('#rebootBtn').onclick = async () => { if (confirm('Reboot the rabbit? It is back in about a minute.')) { const j = await api('/cgi-bin/reboot'); if (!j._err) toast('Rebooting in 10 s'); } };
+$('#healthBtn').onclick = async () => {
+  const on = confirm('Network watchdog: reboot the rabbit when it loses the router?\nOK = enable, Cancel = disable');
+  const j = await api('/cgi-bin/health_check_config', {enable: on ? 1 : 0}); if (!j._err) toast(j.msg);
+};
+$('#healthBtn').textContent = 'Network watchdog';
+
+loadStatus(); setInterval(loadStatus, 15000); connectEvents();
+</script>
+</body>
+</html>

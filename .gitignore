@@ -1,0 +1,20 @@
+# Copies of files from the rabbit: third-party code and secrets (Wi-Fi password). Never commit.
+/reference/
+
+# Work in progress in another session
+/squeezelite/
+
+# Build outputs (rebuild with sim/rust/build-karotzd.sh and sim/build-kernel.sh)
+/sim/out/
+target/
+sim/_probe.txt
+
+# Test output from tools/
+tools/*.log
+tools/*.jpg
+tools/run_live.before.txt
+__pycache__/
+
+# Local secrets
+*.key
+.env

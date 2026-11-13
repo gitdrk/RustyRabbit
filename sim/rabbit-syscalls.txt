@@ -1,0 +1,23 @@
+grep -E ' (sys_|SyS_)(accept4|accept|pipe2|dup3|epoll_create1|even<SyS_)(accept4|accept|pipe2|dup3|epoll_create1|event                         fd2|signalfd4|inotify_ini<|dup3|epoll_create1|eventfd2|signalfd4|inotify_init                         1|preadv|pwritev|recvmmsg<d2|signalfd4|inotify_init1|preadv|pwritev|recvmmsg|                         getrandom|statx|prlimit64<|preadv|pwritev|recvmmsg|getrandom|statx|prlimit64|                         fallocate|utimensat|timer<etrandom|statx|prlimit64|fallocate|utimensat|timerf                         d_create|epoll_pwait|fute<allocate|utimensat|timerfd_create|epoll_pwait|futex                         |sendmmsg|syncfs|setns|cl<_create|epoll_pwait|futex|sendmmsg|syncfs|setns|clo                         ck_gettime|openat|faccess<sendmmsg|syncfs|setns|clock_gettime|openat|faccessa                         t)$' /proc/kallsyms | awk<k_gettime|openat|faccessat)$' /proc/kallsyms | awk                          '{print $3}' | sort; echo<)$' /proc/kallsyms | awk '{print $3}' | sort; echo                          __E""ND__
+sys_accept
+sys_accept4
+sys_clock_gettime
+sys_dup3
+sys_epoll_create1
+sys_epoll_pwait
+sys_eventfd2
+sys_faccessat
+sys_fallocate
+sys_futex
+sys_inotify_init1
+sys_openat
+sys_pipe2
+sys_signalfd4
+sys_timerfd_create
+sys_utimensat
+__END__
+
+-bash-4.1# grep -c . /proc/kallsyms; cat /proc/filesystems | tr '\n' ' '; ech<kallsyms; cat /proc/filesystems | tr '\n' ' '; echo                          __E""ND__
+25091
+nodev   sysfs nodev     rootfs nodev    bdev nodev      proc nodev      sockfs nodev    usbfs nodev     pipefs nodev    anon_inodefs nodev      tmpfs nodev     inotifyfs nodev configfs nodev  devpts  cramfs nodev    ramfs   vfat    msdos nodev     nfs nodev       nfs4 nodev      nfsd    ntfs    romfs nodev     autofs nodev    fuse    fuseblk nodev   fusectl         yaffs   yaffs2 nodev    rpc_pipefs __END__
+-bash-4.1# 

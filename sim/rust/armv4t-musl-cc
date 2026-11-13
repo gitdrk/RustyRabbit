@@ -1,0 +1,8 @@
+#!/bin/sh
+# Linker wrapper for the armv4t-karotz-linux-musleabi Rust target.
+# Links fully static against our ARMv4T musl, with musl's own start files.
+# Never pulls in Ubuntu's ARM libgcc or glibc (those are built for ARMv5T).
+M=/opt/musl-armv4t/lib
+exec arm-linux-gnueabi-gcc -march=armv4t -marm -mfloat-abi=soft \
+  -nostdlib -nostartfiles -static -no-pie \
+  "$M/crt1.o" "$M/crti.o" "$@" -L"$M" -Wl,--start-group -lc -Wl,--end-group "$M/crtn.o"
