@@ -1,0 +1,16 @@
+[package]
+name = "rt_armv4t"
+version = "0.1.0"
+edition = "2021"
+
+# Rust's compiler_builtins (integer division, 64-bit math, soft-float),
+# built for ARMv4T, packed as a static library for C code.
+# Replaces Ubuntu's libgcc.a, which is built for ARMv5T and uses `clz`.
+[lib]
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = false

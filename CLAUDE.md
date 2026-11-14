@@ -15,4 +15,5 @@ Hard rules (from the owner):
 
 Build and test: `sim/rust/build-karotzd.sh`, then `sim/rust/test-karotzd.sh`
 (WSL, root). Both the ISA scan and the 2.6.28 self-test must pass before anything
-goes to the rabbit. In the qemu-arm layer, "spawn child: Exec format error" is expected.
+goes to the rabbit. squeezelite: `squeezelite/scripts/build.sh`, then
+`squeezelite/test/test-qemu.sh` and `test-vm.sh` (see `squeezelite/README.md`). In the qemu-arm layer, "spawn child: Exec format error" is expected.

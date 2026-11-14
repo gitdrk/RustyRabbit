@@ -1,0 +1,32 @@
+%rename cpp_options old_cpp_options
+
+*cpp_options:
+-nostdinc -isystem /opt/musl-armv4t/include -isystem include%s %(old_cpp_options)
+
+*cc1:
+%(cc1_cpu) -nostdinc -isystem /opt/musl-armv4t/include -isystem include%s
+
+*link_libgcc:
+-L/opt/musl-armv4t/lib -L .%s
+
+*libgcc:
+/opt/musl-armv4t/lib/librt_armv4t.a /opt/musl-armv4t/lib/libunwind.a
+
+*startfile:
+/opt/musl-armv4t/lib/crt1.o /opt/musl-armv4t/lib/crti.o
+
+*endfile:
+/opt/musl-armv4t/lib/crtn.o
+
+*link:
+-nostdlib -static
+
+*esp_link:
+
+
+*esp_options:
+
+
+*esp_cpp_options:
+
+

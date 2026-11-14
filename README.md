@@ -27,6 +27,7 @@ karotzd/      Rust source (src/*.rs, src/ui.html)
 sim/          Cross toolchain, emulator and test scripts (run in WSL)
   rust/       Target spec, musl build, linker wrapper, build/test scripts
 tools/        Python helpers that test against a real rabbit over telnet/HTTP
+squeezelite/  Build and tests for a static squeezelite (LMS player) for the rabbit
 docs/         Documentation
 ```
 
@@ -36,7 +37,10 @@ docs/         Documentation
 bash sim/rust/setup-rust.sh && bash sim/rust/build-musl.sh   # once
 bash sim/rust/build-karotzd.sh                                # -> sim/out/karotzd
 bash sim/rust/test-karotzd.sh                                 # needs sim/setup-wsl.sh + sim/build-kernel.sh once
+bash squeezelite/scripts/build.sh                             # optional: squeezelite -> squeezelite/out
 ```
+
+See [squeezelite/README.md](squeezelite/README.md) for the squeezelite player.
 
 Status: not affiliated with Karotz or OpenKarotz. Use at your own risk. The
 rabbit's flash is small and recovery is hard, which is why everything here is

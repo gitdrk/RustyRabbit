@@ -1,0 +1,6 @@
+#!/bin/sh
+# C compiler for the rabbit: ARMv4T, ARM mode, soft-float, fully static musl.
+# The specs file swaps Ubuntu's ARMv5T libgcc.a for librt_armv4t.a (Rust's
+# compiler_builtins built for ARMv4T) and drops gcc's crtbegin/crtend.
+exec arm-linux-gnueabi-gcc -march=armv4t -marm -mfloat-abi=soft -no-pie -fno-pie \
+  -specs /opt/musl-armv4t/lib/armv4t-gcc.specs "$@"

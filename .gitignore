@@ -1,8 +1,10 @@
 # Copies of files from the rabbit: third-party code and secrets (Wi-Fi password). Never commit.
 /reference/
 
-# Work in progress in another session
-/squeezelite/
+# squeezelite: downloaded sources, build output, generated test tracks
+/squeezelite/sources/
+/squeezelite/out/
+/squeezelite/test/rabbit-tracks/
 
 # Build outputs (rebuild with sim/rust/build-karotzd.sh and sim/build-kernel.sh)
 /sim/out/
