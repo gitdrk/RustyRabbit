@@ -1,0 +1,472 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Karotz Teardown</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single technical column, like a bench notebook: spec strip, signal-path schematic, part table, timing chart, then fixes. */
+:root{
+  --bg:#F2F4F3; --panel:#FFFFFF; --panel-2:#E8ECEA; --fg:#16201C; --fg-2:#3C4843; --muted:#5D6A64; --line:#CBD4D0;
+  --accent:#0E7A6B;
+  --dbus:#3363C9; --exec:#B06F08; --media:#2A834A; --net:#BC3B57;
+  --c-static:#9AA6A0; --c-floor:#6F7FB8; --c-forks:#B06F08; --c-hw:#BC3B57;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --sans:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101513; --panel:#18201C; --panel-2:#1F2925; --fg:#E3EAE6; --fg-2:#B9C5BF; --muted:#8E9C95; --line:#2E3A35;
+  --accent:#3FC3AE;
+  --dbus:#7EA4F2; --exec:#E3A43C; --media:#5FC383; --net:#EE7C93;
+  --c-static:#6E7B75; --c-floor:#8E9DD6; --c-forks:#E3A43C; --c-hw:#EE7C93;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101513; --panel:#18201C; --panel-2:#1F2925; --fg:#E3EAE6; --fg-2:#B9C5BF; --muted:#8E9C95; --line:#2E3A35;
+  --accent:#3FC3AE;
+  --dbus:#7EA4F2; --exec:#E3A43C; --media:#5FC383; --net:#EE7C93;
+  --c-static:#6E7B75; --c-floor:#8E9DD6; --c-forks:#E3A43C; --c-hw:#EE7C93;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--sans);margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding-block:40px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:56px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2.4rem,6vw,3.6rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.7rem;font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0;max-width:68ch}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--panel-2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+section{display:grid;gap:20px;min-width:0}
+.sec-head{display:grid;gap:8px}
+.sec-head p{color:var(--fg-2)}
+
+/* header */
+header{display:grid;gap:18px}
+.lede{font-size:1.08rem;color:var(--fg-2)}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.spec{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;gap:2px;min-width:0}
+.spec dt{font:500 11px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.spec dd{margin:0;font-weight:600;font-size:1.02rem}
+.spec small{color:var(--muted);font-size:.8rem}
+
+/* diagram */
+.diagram{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:12px 8px}
+.diagram svg{display:block;min-width:900px;width:100%;height:auto}
+.box{fill:var(--panel);stroke:var(--line);stroke-width:1.2}
+.box.hw{fill:var(--panel-2)}
+.t{fill:var(--fg);font:600 13px var(--sans)}
+.s{fill:var(--muted);font:11px var(--mono)}
+.lane{fill:var(--muted);font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.lane-big{fill:var(--accent);font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.wire{fill:none;stroke:var(--fg-2);stroke-width:1.4}
+.wire.dbus{stroke:var(--dbus)} .wire.exec{stroke:var(--exec)} .wire.media{stroke:var(--media)} .wire.net{stroke:var(--net)}
+.head{fill:var(--fg-2)} .head.dbus{fill:var(--dbus)} .head.exec{fill:var(--exec)} .head.media{fill:var(--media)} .head.net{fill:var(--net)}
+.stripe.dbus{fill:var(--dbus)} .stripe.exec{fill:var(--exec)} .stripe.media{fill:var(--media)} .stripe.net{fill:var(--net)}
+.divider{stroke:var(--line);stroke-dasharray:4 5}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:var(--fg-2)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.sw.dbus{background:var(--dbus)} .sw.exec{background:var(--exec)} .sw.media{background:var(--media)} .sw.net{background:var(--net)}
+
+/* table */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:.9rem}
+th,td{text-align:left;vertical-align:top;padding:12px 14px;border-bottom:1px solid var(--line)}
+th{font:500 11px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--panel-2)}
+tr:last-child td{border-bottom:0}
+td .mono{display:block;color:var(--fg-2);margin-top:3px;font-size:.8rem;overflow-wrap:anywhere}
+.chip{display:inline-block;font:500 11px/1 var(--mono);padding:4px 7px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.chip.dbus{color:var(--dbus)} .chip.exec{color:var(--exec)} .chip.media{color:var(--media)} .chip.net{color:var(--net)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap;font-family:var(--mono);font-size:.84rem}
+
+/* chart */
+.chart{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:18px 18px 14px;display:grid;gap:14px;min-width:0}
+.bars{display:grid;gap:7px}
+.bar-row{display:grid;grid-template-columns:minmax(120px,190px) 1fr 58px;gap:12px;align-items:center}
+.bar-row .lbl{font:12px var(--mono);color:var(--fg-2);overflow-wrap:anywhere}
+.track{position:relative;height:16px;background:
+  repeating-linear-gradient(to right,transparent 0,transparent calc(100%/7 - 1px),var(--line) calc(100%/7 - 1px),var(--line) calc(100%/7));
+  border-radius:3px}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.fill.static{background:var(--c-static)} .fill.floor{background:var(--c-floor)} .fill.forks{background:var(--c-forks)} .fill.hw{background:var(--c-hw)}
+.floorline{position:absolute;top:-4px;bottom:-4px;left:calc(0.30/7*100%);border-left:2px dashed var(--fg-2);opacity:.55}
+.bar-row .val{font:500 12px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.axis{display:grid;grid-template-columns:minmax(120px,190px) 1fr 58px;gap:12px}
+.axis .ticks{display:flex;justify-content:space-between;font:11px var(--mono);color:var(--muted)}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.84rem;color:var(--fg-2)}
+.chart-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:6px}
+.caption{font-size:.84rem;color:var(--muted)}
+
+.stack{display:grid;gap:10px}
+.stack-row{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:12px;align-items:center}
+.stack-bar{display:flex;height:26px;border-radius:4px;overflow:hidden;min-width:0}
+.stack-bar div{display:flex;align-items:center;justify-content:center;font:500 11px var(--mono);color:#fff;white-space:nowrap;overflow:hidden}
+.seg-net{background:var(--c-static)} .seg-bash{background:var(--c-floor);filter:brightness(.85)} .seg-inc{background:var(--c-floor)} .seg-body{background:var(--c-forks)}
+
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.v{border:1px solid var(--line);border-radius:10px;padding:16px;background:var(--panel);display:grid;gap:6px;align-content:start}
+.v .amt{font:800 1.5rem/1 var(--display)}
+.v.floor .amt{color:var(--c-floor)} .v.forks .amt{color:var(--c-forks)} .v.hw .amt{color:var(--c-hw)} .v.net .amt{color:var(--net)}
+.v p{font-size:.9rem;color:var(--fg-2)}
+.answer{border-left:3px solid var(--accent);padding:4px 0 4px 16px;font-size:1.02rem}
+
+/* fixes */
+.groups{display:grid;gap:28px}
+.group{display:grid;gap:12px}
+.group-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px}
+.tag{font:500 11px/1 var(--mono);padding:5px 8px;border-radius:999px;background:var(--panel-2);color:var(--fg-2);letter-spacing:.04em}
+.fix{display:grid;grid-template-columns:1fr auto;gap:4px 16px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);min-width:0}
+.fix h3{font-family:var(--sans);font-weight:600;font-size:.98rem}
+.fix p{grid-column:1/-1;font-size:.9rem;color:var(--fg-2);max-width:none}
+.gain{font:500 12px var(--mono);color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fix.warn{border-color:var(--net)}
+.fix.warn .gain{color:var(--net)}
+footer{font-size:.84rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:560px){
+  .bar-row,.axis,.stack-row{grid-template-columns:96px 1fr 48px}
+  .stack-row{grid-template-columns:96px 1fr}
+  .fix{grid-template-columns:1fr}
+}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Karotz at 192.168.1.233 · OpenKarotz patch 310 · read-only survey, 5 Nov 2026</div>
+  <h1>Karotz Teardown</h1>
+  <p class="lede">How the web page turns a click into a moving ear, a lit belly or a sound, where each request spends its time, and what could be faster. Everything here came from reading the scripts over telnet and timing real requests. Nothing on the rabbit was changed.</p>
+  <dl class="specs">
+    <div class="spec"><dt>CPU</dt><dd>ARM920T</dd><small>~200 MHz (201.93 BogoMIPS)</small></div>
+    <div class="spec"><dt>Memory</dt><dd>60 MB</dd><small>no swap · 43 MB free</small></div>
+    <div class="spec"><dt>Flash /usr</dt><dd>146.9 MB free</dd><small>37% used</small></div>
+    <div class="spec"><dt>Web server</dt><dd>busybox httpd</dd><small>started by inetd per request</small></div>
+    <div class="spec"><dt>API</dt><dd>Bash CGI</dd><small>bash 4.1 · tts is Python 2</small></div>
+    <div class="spec"><dt>Open ports</dt><dd>21 · 22 · 23 · 80</dd><small>ftp · dropbear · telnet · http</small></div>
+  </dl>
+</header>
+
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Signal path</div>
+    <h2>From a click to the hardware</h2>
+    <p>Every API call is a plain GET to <code>/cgi-bin/&lt;name&gt;</code>. inetd starts a fresh busybox httpd, which starts a fresh bash script, which then reaches the hardware in one of four ways. Physical input goes the other way: daemons announce button presses and RFID tags on D-Bus, and a long-running shell loop reacts to them.</p>
+  </div>
+  <div class="diagram" role="img" aria-label="Diagram of the request path from callers through inetd, busybox httpd and CGI scripts to D-Bus, direct binaries, media players and network calls, and the event path from button and RFID daemons through D-Bus and dbus_watcher to actions and webhooks.">
+    <svg viewBox="0 0 1100 560" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="ah-dbus" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head dbus" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="ah-exec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head exec" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="ah-media" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head media" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="ah-net" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head net" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+
+      <!-- lane headers -->
+      <text class="lane" x="10" y="20">Caller</text>
+      <text class="lane" x="220" y="20">Web server</text>
+      <text class="lane" x="440" y="20">CGI layer</text>
+      <text class="lane" x="680" y="20">Mechanism</text>
+      <text class="lane" x="910" y="20">Hardware / outside</text>
+      <text class="lane-big" x="10" y="44">Commands you send →</text>
+
+      <!-- C1 callers -->
+      <rect class="box" x="10" y="64" width="170" height="54" rx="8"/>
+      <text class="t" x="24" y="86">Web UI</text>
+      <text class="s" x="24" y="104">api.html + jQuery</text>
+      <rect class="box" x="10" y="150" width="170" height="54" rx="8"/>
+      <text class="t" x="24" y="172">Your automations</text>
+      <text class="s" x="24" y="190">curl, Home Assistant</text>
+
+      <!-- C2 web server -->
+      <rect class="box" x="220" y="80" width="180" height="108" rx="8"/>
+      <text class="t" x="234" y="104">inetd :80</text>
+      <text class="t" x="234" y="126">busybox httpd -i</text>
+      <text class="s" x="234" y="148">new process per request</text>
+      <text class="s" x="234" y="166">httpd.conf "A:*" = no auth</text>
+
+      <!-- C3 CGI -->
+      <rect class="box" x="440" y="56" width="200" height="172" rx="8"/>
+      <text class="t" x="454" y="80">CGI script</text>
+      <text class="s" x="454" y="100">/usr/www/cgi-bin/&lt;name&gt;</text>
+      <text class="s" x="454" y="118">bash (tts is Python)</text>
+      <text class="s" x="454" y="144">source setup.inc</text>
+      <text class="s" x="454" y="160">       url.inc utils.inc</text>
+      <text class="s" x="454" y="176">       (+ leds/ears.inc)</text>
+      <text class="t" x="454" y="208">≈0.24 s before any work</text>
+
+      <!-- C4 mechanisms -->
+      <rect class="box" x="680" y="40" width="190" height="96" rx="8"/>
+      <rect class="stripe dbus" x="680" y="40" width="5" height="96" rx="2"/>
+      <text class="t" x="696" y="64">D-Bus method call</text>
+      <text class="s" x="696" y="84">dbus-send --system</text>
+      <text class="s" x="696" y="100">com.mindscape.karotz.*</text>
+      <text class="s" x="696" y="118">Led · Webcam</text>
+
+      <rect class="box" x="680" y="146" width="190" height="44" rx="8"/>
+      <rect class="stripe exec" x="680" y="146" width="5" height="44" rx="2"/>
+      <text class="t" x="696" y="165">Direct binary</text>
+      <text class="s" x="696" y="181">/karotz/bin/ears</text>
+
+      <rect class="box" x="680" y="200" width="190" height="44" rx="8"/>
+      <rect class="stripe media" x="680" y="200" width="5" height="44" rx="2"/>
+      <text class="t" x="696" y="219">Media player</text>
+      <text class="s" x="696" y="235">madplay · mplayer</text>
+
+      <rect class="box" x="680" y="254" width="190" height="44" rx="8"/>
+      <rect class="stripe net" x="680" y="254" width="5" height="44" rx="2"/>
+      <text class="t" x="696" y="273">Outbound HTTP</text>
+      <text class="s" x="696" y="289">wget · curl</text>
+
+      <!-- C5 hardware -->
+      <rect class="box hw" x="910" y="40" width="180" height="44" rx="8"/>
+      <text class="t" x="924" y="59">led-daemon</text>
+      <text class="s" x="924" y="75">belly LED</text>
+      <rect class="box hw" x="910" y="92" width="180" height="44" rx="8"/>
+      <text class="t" x="924" y="111">webcam-daemon</text>
+      <text class="s" x="924" y="127">camera → /tmp/picture.jpg</text>
+      <rect class="box hw" x="910" y="146" width="180" height="44" rx="8"/>
+      <text class="t" x="924" y="165">Ear motors</text>
+      <text class="s" x="924" y="181">positions 0–16</text>
+      <rect class="box hw" x="910" y="200" width="180" height="44" rx="8"/>
+      <text class="t" x="924" y="219">Speaker</text>
+      <text class="s" x="924" y="235">mp3 files, streams</text>
+      <rect class="box hw" x="910" y="254" width="180" height="44" rx="8"/>
+      <text class="t" x="924" y="273">Internet</text>
+      <text class="s" x="924" y="289">api.voicerss.org (TTS)</text>
+
+      <!-- wires: commands -->
+      <path class="wire" marker-end="url(#ah)" d="M180,91 C200,91 200,115 218,115"/>
+      <path class="wire" marker-end="url(#ah)" d="M180,177 C200,177 200,152 218,152"/>
+      <path class="wire" marker-end="url(#ah)" d="M400,134 L438,134"/>
+      <path class="wire dbus" marker-end="url(#ah-dbus)" d="M640,90 L678,90"/>
+      <path class="wire exec" marker-end="url(#ah-exec)" d="M640,150 C660,150 660,168 678,168"/>
+      <path class="wire media" marker-end="url(#ah-media)" d="M640,200 C660,200 660,222 678,222"/>
+      <path class="wire net" marker-end="url(#ah-net)" d="M640,220 C664,220 656,276 678,276"/>
+      <path class="wire dbus" marker-end="url(#ah-dbus)" d="M870,70 C890,70 890,62 908,62"/>
+      <path class="wire dbus" marker-end="url(#ah-dbus)" d="M870,110 C890,110 890,114 908,114"/>
+      <path class="wire exec" marker-end="url(#ah-exec)" d="M870,168 L908,168"/>
+      <path class="wire media" marker-end="url(#ah-media)" d="M870,222 L908,222"/>
+      <path class="wire net" marker-end="url(#ah-net)" d="M870,276 L908,276"/>
+
+      <!-- divider -->
+      <line class="divider" x1="10" y1="326" x2="1090" y2="326"/>
+      <text class="lane-big" x="1090" y="352" text-anchor="end">← Events the rabbit sends</text>
+
+      <!-- inbound: hardware producers -->
+      <rect class="box hw" x="910" y="378" width="180" height="44" rx="8"/>
+      <text class="t" x="924" y="397">button-daemon</text>
+      <text class="s" x="924" y="413">head button</text>
+      <rect class="box hw" x="910" y="432" width="180" height="44" rx="8"/>
+      <text class="t" x="924" y="451">rfid-daemon</text>
+      <text class="s" x="924" y="467">tag reader (nose)</text>
+
+      <!-- D-Bus signals -->
+      <rect class="box" x="680" y="378" width="190" height="98" rx="8"/>
+      <rect class="stripe dbus" x="680" y="378" width="5" height="98" rx="2"/>
+      <text class="t" x="696" y="400">D-Bus signals</text>
+      <text class="s" x="696" y="420">click · dclick · tclick</text>
+      <text class="s" x="696" y="436">lclick_start</text>
+      <text class="s" x="696" y="452">tag_in → id, type,</text>
+      <text class="s" x="696" y="468">  color lines</text>
+
+      <!-- watcher -->
+      <rect class="box" x="440" y="378" width="200" height="98" rx="8"/>
+      <text class="t" x="454" y="400">dbus_watcher</text>
+      <text class="s" x="454" y="420">/usr/scripts/dbus_watcher</text>
+      <text class="s" x="454" y="436">dbus-monitor --system |</text>
+      <text class="s" x="454" y="452">  while read line; grep …</text>
+      <text class="s" x="454" y="468">kept alive by immortaldog</text>
+
+      <!-- actions -->
+      <rect class="box" x="220" y="362" width="180" height="70" rx="8"/>
+      <text class="t" x="234" y="384">Button actions</text>
+      <text class="s" x="234" y="402">click, dclick: twang_04</text>
+      <text class="s" x="234" y="418">long: record tags</text>
+      <rect class="box" x="220" y="442" width="180" height="96" rx="8"/>
+      <text class="t" x="234" y="464">Tag actions</text>
+      <text class="s" x="234" y="484">eval base64 of</text>
+      <text class="s" x="234" y="500">Rfid/&lt;id&gt;.action</text>
+      <text class="s" x="234" y="520">→ curl GET</text>
+
+      <rect class="box" x="10" y="442" width="170" height="96" rx="8"/>
+      <text class="t" x="24" y="464">Your endpoint</text>
+      <text class="s" x="24" y="484">HA webhook,</text>
+      <text class="s" x="24" y="500">Node-RED, any URL</text>
+      <text class="s" x="24" y="520">or local /cgi-bin</text>
+
+      <!-- triple click note -->
+      <text class="s" x="234" y="352" style="fill:var(--net)">triple click → /sbin/reboot</text>
+
+      <!-- wires: events -->
+      <path class="wire dbus" marker-end="url(#ah-dbus)" d="M910,400 L872,400"/>
+      <path class="wire dbus" marker-end="url(#ah-dbus)" d="M910,454 L872,454"/>
+      <path class="wire dbus" marker-end="url(#ah-dbus)" d="M680,427 L642,427"/>
+      <path class="wire" marker-end="url(#ah)" d="M440,410 C420,410 420,397 402,397"/>
+      <path class="wire" marker-end="url(#ah)" d="M440,446 C420,446 420,480 402,480"/>
+      <path class="wire net" marker-end="url(#ah-net)" d="M220,490 L182,490"/>
+    </svg>
+  </div>
+  <div class="legend">
+    <span><i class="sw dbus"></i>D-Bus (LED, camera, button, RFID)</span>
+    <span><i class="sw exec"></i>Direct binary (ears)</span>
+    <span><i class="sw media"></i>Media player (speaker)</span>
+    <span><i class="sw net"></i>Network call</span>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Parts list</div>
+    <h2>Each input and output, traced</h2>
+    <p>Script paths are under <code>/usr/www/cgi-bin/</code>; the data folder is <code>/usr/openkarotz</code>. Times are full HTTP round trips from your PC over Wi-Fi, median of what I saw.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Part</th><th>Endpoint</th><th>What the script actually runs</th><th>Path</th><th>Measured</th></tr></thead>
+      <tbody>
+        <tr><td><b>Belly LED</b></td><td><code>leds?color=RRGGBB</code><span class="mono">&amp;pulse=1&amp;color2=&amp;speed=ms&amp;nomemory=1</span></td><td><code>killall led</code>, then <code>dbus-send … Led.light</code> or <code>Led.pulse</code>. Saves the color to <code>Run/led.color</code> unless <code>nomemory=1</code>.</td><td><span class="chip dbus">D-Bus</span></td><td class="num">0.7–1.5 s</td></tr>
+        <tr><td><b>Ears</b></td><td><code>ears?left=N&amp;right=N</code><span class="mono">&amp;noreset=1 · ears_reset · ears_random</span></td><td><code>/karotz/bin/ears R 100 L 100</code>. Without <code>noreset=1</code> it first runs a full homing cycle. A D-Bus Ears path exists in <code>ears.inc</code> but is unused.</td><td><span class="chip exec">binary</span></td><td class="num">0.9 s no reset<br>4.2 s reset<br>6.1 s reset + move</td></tr>
+        <tr><td><b>Speaker, local clip</b></td><td><code>sound?id=bip1</code></td><td><code>madplay -q Sounds/&lt;id&gt;.mp3</code> in the foreground, so the HTTP reply waits until the clip ends.</td><td><span class="chip media">media</span></td><td class="num">1.9–6.5 s<br>(clip length)</td></tr>
+        <tr><td><b>Speaker, stream</b></td><td><code>sound?url=…</code><span class="mono">sound_control?cmd=pause|quit</span></td><td><code>sleep 1</code>, then <code>mplayer -slave</code> in the background, controlled by writing to the pipe <code>/tmp/mplayer-control</code>.</td><td><span class="chip media">media</span></td><td class="num">≈1.3 s (from source, not timed)</td></tr>
+        <tr><td><b>Text to speech</b></td><td><code>tts?text=…&amp;voice=heather</code></td><td>Python script added in 2017 (FreeRabbits.nl patch). <code>wget</code> to <code>api.voicerss.org</code> with an embedded key, saves <code>/tmp/&lt;md5&gt;.mp3</code>, plays it with <code>madplay -A6</code>. The original Acapela and iSpeech providers are dead.</td><td><span class="chip net">network</span> <span class="chip media">media</span></td><td class="num">timed out<br>(no internet path)</td></tr>
+        <tr><td><b>Camera</b></td><td><code>snapshot?silent=1</code><span class="mono">snapshot_get?filename=…</span></td><td><code>dbus-send … Webcam.takeSnapshot</code> writes <code>/tmp/picture.jpg</code>; the script moves it to <code>Snapshots/</code> and makes a ¼-size GIF with <code>arm-linux-djpeg</code>. Still images only, no stream.</td><td><span class="chip dbus">D-Bus</span></td><td class="num">3.1 s</td></tr>
+        <tr><td><b>RFID reader</b></td><td><code>rfid_assign_url</code><span class="mono">rfid_assign_karotz · rfid_list</span></td><td><code>rfid-daemon</code> emits <code>tag_in</code>; <code>dbus_watcher</code> reads the tag id, then runs <code>eval</code> on the base64 text in <code>Rfid/&lt;id&gt;.action</code>, which is a <code>curl</code> command built by <code>url.inc</code>. Fires even while asleep.</td><td><span class="chip dbus">D-Bus</span> <span class="chip net">network</span></td><td class="num">n/a</td></tr>
+        <tr><td><b>Head button</b></td><td>none</td><td><code>button-daemon</code> emits <code>click</code>, <code>dclick</code>, <code>lclick_start</code>, <code>tclick</code>. Click and double click play <code>twang_04</code>; long press toggles tag recording; triple click reboots.</td><td><span class="chip dbus">D-Bus</span></td><td class="num">n/a</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Timing</div>
+    <h2>Where the seconds go</h2>
+    <p>Each bar is one real request from your PC. The dashed line is the 0.30 s that every CGI call pays before it does anything useful.</p>
+  </div>
+
+  <div class="chart">
+    <div class="chart-legend">
+      <span><i style="background:var(--c-static)"></i>Static file</span>
+      <span><i style="background:var(--c-floor)"></i>Mostly CGI startup</span>
+      <span><i style="background:var(--c-forks)"></i>Script work (many small programs)</span>
+      <span><i style="background:var(--c-hw)"></i>Waiting on hardware or playback</span>
+    </div>
+    <div class="bars" id="bars"></div>
+    <div class="axis"><span></span><div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7 s</span></div><span></span></div>
+    <p class="caption">Measured with curl from 192.168.1.72 on 5 Nov 2026. Read-only endpoints were run three times and the spread was under 30 ms. Action endpoints were run once each.</p>
+  </div>
+
+  <div class="chart">
+    <h3>Inside one request, timed on the rabbit itself</h3>
+    <div class="stack">
+      <div class="stack-row"><span class="mono">get_version · 0.32 s</span>
+        <div class="stack-bar">
+          <div class="seg-net" style="flex:0.012" title="network + httpd ≈ 0.012 s"></div>
+          <div class="seg-bash" style="flex:0.036" title="bash start 0.036 s"></div>
+          <div class="seg-inc" style="flex:0.204" title="parse includes 0.204 s">includes</div>
+          <div class="seg-body" style="flex:0.065" title="script body 0.065 s"></div>
+        </div></div>
+      <div class="stack-row"><span class="mono">status · 1.04 s</span>
+        <div class="stack-bar">
+          <div class="seg-net" style="flex:0.012"></div>
+          <div class="seg-bash" style="flex:0.036"></div>
+          <div class="seg-inc" style="flex:0.204">includes</div>
+          <div class="seg-body" style="flex:0.779">≈30 child programs: ifconfig ×4, find ×2, ls ×3, df ×2, cat, awk, wc…</div>
+        </div></div>
+    </div>
+    <div class="chart-legend">
+      <span><i style="background:var(--c-static)"></i>Network + httpd ≈ 0.01 s</span>
+      <span><i style="background:var(--c-floor);filter:brightness(.85)"></i>Start bash 0.036 s</span>
+      <span><i style="background:var(--c-floor)"></i>Parse 684 lines of includes 0.20 s</span>
+      <span><i style="background:var(--c-forks)"></i>Script body</span>
+    </div>
+    <p class="caption">From <code>time</code> on the device: <code>bash -c true</code> 0.036 s, the three includes 0.240 s, the whole <code>get_version</code> script 0.305 s, <code>status</code> 1.019 s. A static file over HTTP answers in about 0.02 s.</p>
+  </div>
+
+  <p class="answer"><b>Hardware or CGI?</b> Both, in layers. The web server is fast. The first 0.3 s of every call is software: bash re-reading the same helper files on a 200 MHz chip. The next half second, on calls like <code>status</code>, is also software: dozens of tiny programs started one after another. The multi-second calls are the scripts choosing to wait for the hardware: a clip playing to the end, or the ears homing before they move.</p>
+
+  <div class="verdict">
+    <div class="v floor"><div class="amt">0.3 s</div><h3>Fixed CGI cost</h3><p>Paid by every call. bash starts, then parses <code>setup.inc</code>, <code>url.inc</code> and <code>utils.inc</code> again. Nothing is kept between requests.</p></div>
+    <div class="v forks"><div class="amt">+0.4–0.8 s</div><h3>Process spawning</h3><p>Each <code>killall</code>, <code>logger</code>, <code>ifconfig</code> or <code>echo | cut</code> costs 10–30 ms on this CPU. <code>status</code> and <code>sound_list</code> run dozens.</p></div>
+    <div class="v hw"><div class="amt">+1–6 s</div><h3>Waiting on purpose</h3><p><code>sound</code> holds the reply until <code>madplay</code> finishes. <code>ears</code> homes both motors first unless you pass <code>noreset=1</code>. The camera adds about 2.5 s.</p></div>
+    <div class="v net"><div class="amt">timeout</div><h3>Internet</h3><p>Speech depends on VoiceRSS. With no route out, the call hangs until it times out.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Opportunities</div>
+    <h2>What could be faster or better</h2>
+    <p>Grouped by how much they touch the rabbit. The first group needs no change on the device at all.</p>
+  </div>
+
+  <div class="groups">
+    <div class="group">
+      <div class="group-h"><h3>Call it smarter</h3><span class="tag">no device change</span></div>
+      <div class="fix"><h3>Always send <code>noreset=1</code> to ears</h3><span class="gain">6.1 s → 0.9 s</span><p>The reset is a full mechanical homing pass. Do it once at startup or after a reboot, then move ears directly.</p></div>
+      <div class="fix"><h3>Don't wait for sound replies</h3><span class="gain">frees the caller</span><p>A <code>sound?id=</code> reply arrives only after the clip ends. Send it with a short client timeout and move on, or play through <code>sound?url=</code>, which backgrounds mplayer and returns after about a second.</p></div>
+      <div class="fix"><h3>Make speech on your PC, play it on the rabbit</h3><span class="gain">works offline</span><p>Generate an MP3 with any modern voice on your own machine, serve it on your LAN, and call <code>sound?url=http://your-pc/…mp3</code>. This skips VoiceRSS entirely and sounds far better.</p></div>
+      <div class="fix"><h3>Use <code>nomemory=1</code> for status lights</h3><span class="gain">no file write per call</span><p>Without it, every LED change writes <code>/usr/openkarotz/Run/led.color</code>. For frequent automation colors, skip the write.</p></div>
+      <div class="fix"><h3>Health-check with <code>get_version</code>, not <code>status</code></h3><span class="gain">1.04 s → 0.33 s</span><p>Cache <code>sound_list</code>, <code>voice_list</code> and <code>moods_list</code> on your side; they only change when files are added.</p></div>
+      <div class="fix"><h3>Send one command at a time</h3><span class="gain">fewer surprises</span><p>Scripts call <code>killall led</code>, <code>killall madplay</code>, and <code>ears_reset</code> kills everything. Overlapping requests cancel each other. Put a small queue in front of the rabbit.</p></div>
+      <div class="fix"><h3>Restore its internet route</h3><span class="gain">fixes tts</span><p>Check the rabbit's gateway and DNS in your router. The clock also reads 1970, so it has no time sync either.</p></div>
+    </div>
+
+    <div class="group">
+      <div class="group-h"><h3>Small edits on the rabbit</h3><span class="tag">only if you ever choose to</span></div>
+      <p class="caption" style="max-width:68ch">Storage is not the constraint you expected: <code>/usr</code> has 146.9 MB free. These are each a few lines in existing scripts, and the originals can be copied aside first.</p>
+      <div class="fix"><h3>Background <code>madplay</code> in <code>PlaySound</code></h3><span class="gain">5.67 s → 1.11 s (tested)</span><p>Add <code>&amp;</code> to one line in <code>utils.inc</code>. Tested on a copy held in RAM: <code>sound?id=bip1</code> returned in 1.11 s and the clip still played to the end. The rest of that second is the CGI startup plus the <code>killall</code> and <code>logger</code> calls. Speech has its own <code>madplay</code> call in the Python <code>tts</code> script and would need the same change there. Button and tag events play two clips back to back through the same function, so a real edit should background only the web call.</p></div>
+      <div class="fix"><h3>Slim down <code>status</code></h3><span class="gain">≈1.0 s → 0.4 s</span><p>Read MACs from <code>/sys/class/net/*/address</code>, count files with bash globs, and call <code>df</code> once.</p></div>
+      <div class="fix"><h3>Drop the per-call <code>logger</code> and repeated <code>killall</code></h3><span class="gain">−50 to −150 ms</span><p>Combine the kills into one command and log only errors.</p></div>
+      <div class="fix"><h3>Replace CGI with one long-running process</h3><span class="gain">0.3 s → ~0.02 s</span><p>Python 2 is already installed. A single small HTTP server that stays running would skip the bash startup on every call, and it could push button and tag events out as webhooks.</p></div>
+    </div>
+
+    <div class="group">
+      <div class="group-h"><h3>Security</h3><span class="tag">worth knowing</span></div>
+      <div class="fix warn"><h3>Anyone on your network is root on the rabbit</h3><span class="gain">high</span><p>Telnet accepts user <code>karotz</code> with a blank password and gives a root shell. The web API has no login (<code>A:*</code>). Keep the rabbit on a guest or IoT network.</p></div>
+      <div class="fix warn"><h3>Web parameters reach <code>eval</code></h3><span class="gain">high</span><p><code>url.inc</code> builds curl commands with <code>printf</code> and runs them with <code>eval</code>. Input filtering strips backticks and <code>$(</code> but not quotes, so URL parameters can likely run shell commands. I did not test this.</p></div>
+      <div class="fix warn"><h3>Triple click reboots</h3><span class="gain">low</span><p>Hard-coded in <code>dbus_watcher</code>. Fine to know if a child is pressing the head.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>Method: telnet as <code>karotz</code>, read-only commands only (<code>cat</code>, <code>ls</code>, <code>ps</code>, <code>grep</code>, <code>time</code> on read-only scripts), plus HTTP timing from 192.168.1.72. The LED, ear, sound and snapshot tests were returned to their starting state: LED off, ears reset. One test snapshot was added to <code>Snapshots/</code>.</footer>
+</div>
+
+<script>
+(function(){
+  var data=[
+    ["favicon.png (static)",0.10,"static"],
+    ["voice_list",0.28,"floor"],
+    ["get_version",0.33,"floor"],
+    ["get_free_space",0.38,"floor"],
+    ["rfid_list",0.39,"floor"],
+    ["leds color",0.71,"forks"],
+    ["ears noreset=1",0.89,"forks"],
+    ["sound_list",1.03,"forks"],
+    ["status",1.04,"forks"],
+    ["sound twang_04",1.92,"hw"],
+    ["snapshot",3.15,"hw"],
+    ["ears_reset",4.23,"hw"],
+    ["sound bip1",5.67,"hw"],
+    ["ears (reset + move)",6.13,"hw"],
+    ["sound install_ok",6.54,"hw"]
+  ];
+  var host=document.getElementById("bars");
+  data.forEach(function(d){
+    var row=document.createElement("div");row.className="bar-row";
+    var l=document.createElement("span");l.className="lbl";l.textContent=d[0];
+    var t=document.createElement("div");t.className="track";
+    var f=document.createElement("div");f.className="fill "+d[2];f.style.width=(d[1]/7*100)+"%";
+    var fl=document.createElement("div");fl.className="floorline";
+    t.appendChild(f);t.appendChild(fl);
+    var v=document.createElement("span");v.className="val";v.textContent=d[1].toFixed(2)+" s";
+    row.appendChild(l);row.appendChild(t);row.appendChild(v);host.appendChild(row);
+  });
+})();
+</script>
+
+</body></html>

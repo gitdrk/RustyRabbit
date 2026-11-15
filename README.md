@@ -18,6 +18,7 @@ A fast, safe replacement for the web API on a **Karotz** rabbit running the
 |---|---|
 | [docs/KAROTZD.md](docs/KAROTZD.md) | How it works, how to build and test it, what we learned about the hardware, and the rules for agents |
 | [docs/INSTALL.md](docs/INSTALL.md) | The phased, reversible plan for installing it on the rabbit (not done yet) |
+| [docs/artifacts/karotz-teardown.html](docs/artifacts/karotz-teardown.html) | The original read-only survey of the stock firmware: request path, timings, and what could be faster (open in a browser) |
 | [CLAUDE.md](CLAUDE.md) | Short instructions for coding agents |
 
 ## Layout
