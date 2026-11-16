@@ -3,6 +3,9 @@
 > **Status: plan only. Nothing here has been done.** Each phase that writes to flash
 > needs the owner's explicit go-ahead, phase by phase. Approving one phase doesn't
 > approve the next. See [KAROTZD.md](KAROTZD.md) for background and the rules for agents.
+>
+> The phases are scripted in [`tools/deploy.py`](../tools/deploy.py), which also
+> installs squeezelite. See [DEPLOY.md](DEPLOY.md).
 
 ## Goals and principles
 
@@ -170,3 +173,20 @@ touch /usr/karotzd/disabled; killall karotzd
 cp -p /usr/spool/cron/crontabs/root.bak-karotzd /usr/spool/cron/crontabs/root   # if phase 2 was done
 rm -rf /usr/karotzd; sync
 ```
+
+---
+
+## The deploy script
+
+[`tools/deploy.py`](../tools/deploy.py) runs these phases for karotzd and squeezelite:
+
+- `check` is phase 0;
+- `install` is phase 1;
+- `autostart` is phase 2;
+- `allow-writes` is phase 4;
+- `uninstall` is the rollback.
+
+It checks that OpenKarotz is installed before every command, and it's a dry run
+unless given `--write-flash`. squeezelite follows the same pattern as karotzd: its
+own `/usr/squeezelite/` folder, a `run.sh` with a kill switch, and a cron line. See
+[DEPLOY.md](DEPLOY.md) for what each command does.

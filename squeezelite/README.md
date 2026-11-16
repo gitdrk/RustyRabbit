@@ -9,6 +9,7 @@ Server (LMS) player. It is about 650 KB and needs no libraries on the rabbit.
 - **Sound output:** PortAudio v19 with only the OSS backend, writing to `/dev/dsp`.
   The rabbit has no `/dev/snd`.
 - **Not installed on the rabbit.** It has only been run from `/tmp` (RAM).
+  `tools/deploy.py` can install it ([docs/DEPLOY.md](../docs/DEPLOY.md)).
 
 ## Build (WSL, Ubuntu 24.04, as root)
 
@@ -90,5 +91,7 @@ Results on 2026-11-13:
 `-r` limits the sample rates squeezelite reports, so that LMS resamples hi-res files.
 Without it, squeezelite claims up to 192 kHz, and the OSS device may not accept that.
 
-Starting it on boot would mean writing to flash. That needs the owner's approval: see
-`docs/INSTALL.md` and the rules in `docs/KAROTZD.md`.
+To install it on the rabbit and start it on boot, use `tools/deploy.py`
+(`--only squeezelite --lms <lms-ip>`). It's a dry run unless you pass `--write-flash`,
+which needs the owner's approval: see [docs/DEPLOY.md](../docs/DEPLOY.md). The installed player runs with
+`-C 5`, so it releases `/dev/dsp` after 5 s idle and the rabbit's own sounds still play.

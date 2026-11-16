@@ -7,7 +7,8 @@ the project up later. Agents: read [Rules for agents](#rules-for-agents) first.
 
 - **Status (2026-11-13):** feature-complete for the OpenKarotz CGI API and tested on
   the real rabbit, but **not installed**. It has only ever run from `/tmp` (RAM)
-  in `--readonly` mode. Installing it is planned in [INSTALL.md](INSTALL.md).
+  in `--readonly` mode. Installing it is planned in [INSTALL.md](INSTALL.md) and
+  scripted by `tools/deploy.py` ([DEPLOY.md](DEPLOY.md)).
 - **Size:** about 620 KB on disk, about 470 KB of RAM (RSS) while serving.
 - **Dependencies:** none outside Rust's `std`. There are no crates, and the D-Bus,
   HTTP, MD5 and base64 code are written by hand.
@@ -228,6 +229,7 @@ These Python helpers drive the rabbit over telnet and HTTP. Each one logs in, ru
 | `cam_test.py` | Camera timing via D-Bus `takeSnapshot` (RAM only) |
 | `record_events.py [minutes]` | Saves the SSE event stream to a file on the PC |
 | `fix_dns.py` | The one approved flash change (see below), kept as a record |
+| `deploy.py` | Installs karotzd and squeezelite on top of OpenKarotz, phase by phase, as a dry run unless given `--write-flash`. See [DEPLOY.md](DEPLOY.md). |
 
 ---
 
